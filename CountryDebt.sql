@@ -1,11 +1,35 @@
--- creating the databae to house the debt data table
-create DATABASE newdebt_data
+-- Creating the database to store debt data
+CREATE DATABASE newdebt_data;
 
--- Using the database created
-use newdebt_data
+-- Selecting the newly created database to use
+USE newdebt_data;
 
--- creating the table variables
-CREATE TABLE CountryDebtData1 (
+-- The data to be used was obtained from Kaggle (available at: https://www.kaggle.com/datasets/evadrichter/evolution-of-debt-distress-in-hipc-countries/data)
+-- The dataset description is tagged as Risk of external debt distress, according to the Debt Sustainability Analysis (DSA) for Low-Income countries conducted jointly by the International Monetary Fund (IMF) and World Bank.
+-- The description for each variable is highlighted as:
+-- CountryCode: Three-letter country code (e.g., CMR)
+-- Year: Year of the data (range 2005-2019)
+-- RiskOfDebtDistress: Qualitative measure of debt distress ('High', 'In debt distress', 'Medium', 'Low')
+-- DebtIndicator: Numeric indicator of debt distress (e.g., 1 for high risk, 0 for no risk)
+-- Inflation: Inflation rate (percentage) in the country
+-- CurrentAccountBalance: Current account balance (in millions of USD)
+-- GeneralGovLendingBorrowing: Government lending/borrowing balance (in millions of USD)
+-- VolumeExportGoods: Value of exported goods (in millions of USD)
+-- GDP: Gross Domestic Product (in billions of USD)
+-- GDPPerCapita: GDP per capita (in USD)
+-- GeneralGovRenue: Total government revenue (in millions of USD)
+-- USInterestRates: US interest rate (affecting global debt servicing)
+-- ExternalDebtService: Debt service payments (in millions of USD)
+-- RealGDPGrowth: Real GDP growth rate (percentage)
+-- ExchangeRate: Exchange rate relative to USD
+-- ControlOfCorruption: Governance indicator (scale 0-10, with 10 being no corruption)
+-- GovernmentEffectiveness: Governance effectiveness (scale 0-10)
+-- PoliticalStability: Political stability (scale 0-10)
+-- RegulatoryQuality: Quality of regulation (scale 0-10)
+-- RuleOfLaw: Strength of the legal system (scale 0-10)
+-- VoiceAndAccountability: Extent of citizens' political rights and liberties (scale 0-10)
+
+CREATE TABLE CountryDebtData (
     CountryCode VARCHAR(3),
     Year INT,
     RiskOfDebtDistress VARCHAR(50),
@@ -16,7 +40,7 @@ CREATE TABLE CountryDebtData1 (
     VolumeExportGoods DECIMAL(10,2),
     GDP DECIMAL(10,2),
     GDPPerCapita DECIMAL(10,2),
-	GeneralGovRenue DECIMAL(10,2),
+    GeneralGovRenue DECIMAL(10,2),
     USInterestRates DECIMAL(5,2),
     ExternalDebtService DECIMAL(15,2),
     RealGDPGrowth DECIMAL(5,2),
@@ -28,11 +52,16 @@ CREATE TABLE CountryDebtData1 (
     RuleOfLaw DECIMAL(5,2),
     VoiceAndAccountability DECIMAL(5,2)
 );
--- Checking the table
-Select * from CountryDebtData
 
--- Importing data
--- using bulkinsert after cleaning the data in excel
+-- Verifying the table structure
+SELECT * FROM CountryDebtData;
+
+-- Importing data into the table from a CSV file after cleaning the data in Excel
+-- BULK INSERT allows for importing large datasets quickly
+-- FIELDTERMINATOR specifies the delimiter between columns (commas in this case)
+-- ROWTERMINATOR specifies the end of each row (newline characters)
+-- FIRSTROW skips the header row of the CSV
+
 BULK INSERT CountryDebtData
 FROM 'C:\Users\HP\Downloads\LICDebt.csv'
 WITH (
@@ -41,11 +70,12 @@ WITH (
     FIRSTROW = 2
 );
 
--- Notice an error with one of the variable (ControlOfCorruption) and altering the data to fit using alter command
+-- After realizing an issue with the ControlOfCorruption column's data type, 
+-- we alter it to increase precision for better accuracy
 ALTER TABLE CountryDebtData
 ALTER COLUMN ControlOfCorruption DECIMAL(10,2);
 
--- Using the bulkinsert again
+-- Re-importing data into the table after correcting the column definition
 BULK INSERT CountryDebtData
 FROM 'C:\Users\HP\Downloads\LICDebt.csv'
 WITH (
@@ -54,50 +84,51 @@ WITH (
     FIRSTROW = 2
 );
 
--- After it was succesful, the table was previewed
-Select * from CountryDebtData
+-- Previewing the data after the import is successful
+SELECT * FROM CountryDebtData;
 
--- Running queries
--- 1. Country with highest debt stress
+-- Query 1: Fetching countries with the highest debt distress level ('High') sorted by year
+-- This query shows the trend of high debt distress across countries over time
 SELECT CountryCode, Year, RiskOfDebtDistress
 FROM CountryDebtData
 WHERE RiskOfDebtDistress = 'High'
 ORDER BY Year ASC;
 
--- 2. Total external debt service by country
+-- Query 2: Calculating total external debt service per country
+-- This helps to understand the total debt burden
 SELECT CountryCode, SUM(ExternalDebtService) AS TotalDebtService
 FROM CountryDebtData
 GROUP BY CountryCode
 ORDER BY TotalDebtService DESC;
 
--- 3. Countriews with lowest GDP per capita and highest debt distress
--- I want to use the average as the criteria, hence i will first find average
-Select AVG(GDPPerCapita) as AVGGDPPerCapita
-From CountryDebtData
+-- Query 3: Finding countries with the lowest GDP per capita and the highest debt distress
+-- Using the average GDP per capita as the threshold
+SELECT AVG(GDPPerCapita) AS AVGGDPPerCapita
+FROM CountryDebtData;
 
--- average is 909.689198, i will use this as criteria!
+-- Based on the average GDP per capita (909.689198), we fetch countries below this value and with 'High' debt distress
 SELECT CountryCode, Year, GDPPerCapita, RiskOfDebtDistress
 FROM CountryDebtData
 WHERE GDPPerCapita < 909.689198 AND RiskOfDebtDistress = 'High'
 ORDER BY CountryCode ASC;
 
--- or one copuld order it by GDPPerCapita
+-- Alternatively, ordering the results by GDP per capita for better clarity
 SELECT CountryCode, Year, GDPPerCapita, RiskOfDebtDistress
 FROM CountryDebtData
 WHERE GDPPerCapita < 909.689198 AND RiskOfDebtDistress = 'High'
 ORDER BY GDPPerCapita ASC;
 
--- one can also run the query directly by using subquery for average as below
+-- Performing the same query using a subquery to calculate the average simultaneously
 SELECT CountryCode, Year, GDPPerCapita, RiskOfDebtDistress
 FROM CountryDebtData
 WHERE GDPPerCapita < (
-Select AVG(GDPPerCapita)
-from CountryDebtData
+    SELECT AVG(GDPPerCapita)
+    FROM CountryDebtData
 )
 AND RiskOfDebtDistress = 'High'
 ORDER BY GDPPerCapita ASC;
 
--- 4. Correlation between governance indicator and debt distress
+-- Query 4: Correlating governance indicators (corruption control, government effectiveness, political stability) with debt distress. Higher values indicate better governance. 
 SELECT CountryCode, AVG(ControlOfCorruption) AS AvgControlOfCorruption, 
        AVG(GovernmentEffectiveness) AS AvgGovEffectiveness, 
        AVG(PoliticalStability) AS AvgPoliticalStability,
@@ -106,20 +137,24 @@ FROM CountryDebtData
 GROUP BY CountryCode, RiskOfDebtDistress
 ORDER BY AvgControlOfCorruption DESC;
 
--- 5. Tracking debt data
+-- Query 5: Tracking the change in external debt service from the previous year
+-- Using the LAG function to fetch the previous year's debt service data for each country
+-- DebtChange calculates the difference between current and previous year debt service
 SELECT CountryCode, Year, ExternalDebtService,
        LAG(ExternalDebtService, 1) OVER (PARTITION BY CountryCode ORDER BY Year) AS PreviousYearDebtService,
        ExternalDebtService - LAG(ExternalDebtService, 1) OVER (PARTITION BY CountryCode ORDER BY Year) AS DebtChange
 FROM CountryDebtData
 ORDER BY CountryCode, Year;
 
--- 6. Relationship between GDP and Debt service
+-- Query 6: Calculating the Debt-to-GDP ratio to assess the debt burden relative to economic output
+-- Higher ratios indicate a greater debt burden on the economy
 SELECT CountryCode, Year, GDP, ExternalDebtService, 
        (ExternalDebtService / GDP) * 100 AS DebtToGDPRatio
 FROM CountryDebtData
 ORDER BY CountryCode, Year;
 
--- 7. Long term sustainability of debt level by country
+-- Query 7: Assessing the long-term sustainability of debt levels by country
+-- Debt-to-GDP, Debt-to-Exports, and Debt-to-Revenue ratios provide insights into the sustainability of debt burdens
 SELECT CountryCode, Year, 
        (ExternalDebtService / GDP) * 100 AS DebtToGDPRatio,
        (ExternalDebtService / VolumeExportGoods) * 100 AS DebtServiceToExports,
@@ -127,7 +162,7 @@ SELECT CountryCode, Year,
 FROM CountryDebtData
 ORDER BY CountryCode, Year;
 
---8. Debt growth trend. This provides an understanding of how debt burdens have evolved over the years
+-- Query 8: Analyzing debt growth trends over time by calculating the annual percentage growth in external debt
 SELECT CountryCode, Year, 
        ExternalDebtService, 
        LAG(ExternalDebtService, 1) OVER (PARTITION BY CountryCode ORDER BY Year) AS PreviousYearDebt,
@@ -135,7 +170,8 @@ SELECT CountryCode, Year,
 FROM CountryDebtData
 ORDER BY CountryCode, Year;
 
---9. Debt vulnerabilities and economic indicators
+-- Query 9: Examining the relationship between inflation, GDP growth, and debt levels by averaging economic indicators
+-- over time and comparing them across debt distress categories
 SELECT CountryCode, 
        AVG(Inflation) AS AvgInflation, 
        AVG(RealGDPGrowth) AS AvgGDPGrowth, 
@@ -145,16 +181,15 @@ FROM CountryDebtData
 GROUP BY CountryCode, RiskOfDebtDistress
 ORDER BY AvgDebtToGDPRatio DESC;
 
--- 10. how does external facor (such as US interest rate) affect the debt servicing 
+-- Query 10: Investigating how external factors, specifically US interest rates, affect debt servicing costs
 SELECT CountryCode, Year, 
        USInterestRates, 
        ExternalDebtService, 
        (ExternalDebtService / GDP) * 100 AS DebtToGDPRatio
 FROM CountryDebtData
-WHERE USInterestRates IS NOT NULL
-ORDER BY Year;
+ORDER BY USInterestRates DESC, Year ASC;
 
---11. does poor governance, political instability and or cooruption have link with high debt distress?
+-- Query 11: Investigating if poor governance, political instability, and or corruption have a link with high debt distress?
 SELECT CountryCode, AVG(ControlOfCorruption) AS AvgCorruptionControl, 
        AVG(PoliticalStability) AS AvgPoliticalStability, 
        AVG(GovernmentEffectiveness) AS AvgGovEffectiveness,
@@ -163,7 +198,7 @@ FROM CountryDebtData
 GROUP BY CountryCode, RiskOfDebtDistress
 ORDER BY AvgCorruptionControl DESC;
 
---12. what countries are in high risk of defaulting, and that may need debt restructuring 
+-- Query 12: Identifying what countries are at high risk of defaulting, and that may need debt restructuring 
 SELECT CountryCode, Year, 
        (CASE 
           WHEN (ExternalDebtService / GDP) * 100 > 50 THEN 'High Risk'
