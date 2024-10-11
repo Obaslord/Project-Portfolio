@@ -45,7 +45,7 @@ CREATE TABLE CountryDebtData (
     ExternalDebtService DECIMAL(15,2),
     RealGDPGrowth DECIMAL(5,2),
     ExchangeRate DECIMAL(10,2),
-    ControlOfCorruption DECIMAL(10,2),
+    ControlOfCorruption DECIMAL(5,2),
     GovernmentEffectiveness DECIMAL(5,2),
     PoliticalStability DECIMAL(5,2),
     RegulatoryQuality DECIMAL(5,2),
