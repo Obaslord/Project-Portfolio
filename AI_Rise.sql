@@ -46,7 +46,7 @@ SELECT Year, "AI Software Revenue",
 LAG("AI Software Revenue", 1) OVER (ORDER BY Year) AS Previous_Year_Revenue,
 (("AI Software Revenue" - LAG("AI Software Revenue", 1) OVER (ORDER BY Year)) / 
 LAG("AI Software Revenue", 1) OVER (ORDER BY Year)) * 100 AS Revenue_Growth_Percentage
-FROM AI_Data;
+FROM AI_Adoption;
 
 -- Query 2: Retrieve AI adoption percentage by year, to understand the trend of AI adoption from 2018 to 2025
 select Year, AI_Adoption_Percentage
