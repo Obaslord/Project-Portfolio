@@ -3,8 +3,8 @@ create database SecurityAnalysis
 Use SecurityAnalysis
 
 -- The data to be used for the security analysis project contains three tables 
--- The tables includes locations, officers and incident reports (main table) 
--- The table are structured in the manner at which each of them is created. 
+-- The tables include locations, officers and incident reports (main table) 
+-- The tables are structured in how each of them is created. 
 -- Locations Table has 5 columns
 -- Officers Table has 6 columns 
 -- Incident Report table has 10 columns 
@@ -177,13 +177,13 @@ ORDER BY cases_handled DESC
 ;
 
 -- Q7: What is the proportion of incidents handled by officers with more than 10 years of experience?
-		-- Sub question: which officer with more than 5 years of experience handled the most case?
+		-- Sub question: which officer with more than 10 years of experience handled the most cases?
 		SELECT * 
 		FROM officers
 		WHERE years_of_experience > 10
 		ORDER BY cases_handled DESC
 		;
-		-- proportion of the cases handled (expected to be aroun 48% as the total number of officers with more than 10 years of experience is 482)
+		-- proportion of the cases handled (expected to be around 48% as the total number of officers with more than 10 years of experience is 482)
 SELECT COUNT(IR.incident_id) AS incidents_handled_by_experienced, 
        (SELECT COUNT(*) FROM IncidentReports) AS total_incidents,
        COUNT(IR.incident_id) * 100.0 / (SELECT COUNT(*) FROM IncidentReports) AS percentage
@@ -198,7 +198,7 @@ JOIN Officers O ON IR.officerID = O.officerID
 GROUP BY O.rank, O.name
 ORDER BY avg_response_time ASC;
 		-- the result showed that this does not vary by rank as a lieutenant had the highest and the lowest response time!
-		--the question now raises is which rank had the best response time
+		--the question now raised is which rank had the best response time
 			SELECT O.rank, AVG(IR.response_time_minutes) AS avg_response_time
 			FROM IncidentReports IR
 			JOIN Officers O ON IR.officerID = O.officerID
@@ -206,7 +206,7 @@ ORDER BY avg_response_time ASC;
 			ORDER BY avg_response_time ASC
 			;
 
--- Q9: What is the relationship between officers' years of experience and the severity of cases they handle?
+-- Q9: What is the relationship between officers' years of experience and the severity of their cases?
 SELECT O.years_of_experience, IR.severity, COUNT(IR.incident_id) AS case_count
 FROM IncidentReports IR
 JOIN Officers O ON IR.officerID = O.officerID
@@ -215,8 +215,8 @@ ORDER BY O.years_of_experience DESC, IR.severity
 ;
 
 
--- RQ3. What is the response times and how efficient is it?
--- Q10: What is the average response time for incidents by severity level?
+-- RQ3. What are the response times and how efficient is it?
+-- Q10: What is the average incident response time by severity level?
 SELECT severity, AVG(response_time_minutes) AS avg_response_time
 FROM IncidentReports
 GROUP BY severity
